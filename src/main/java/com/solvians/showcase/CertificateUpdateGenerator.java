@@ -2,7 +2,9 @@ package com.solvians.showcase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 public class CertificateUpdateGenerator {
@@ -15,12 +17,24 @@ public class CertificateUpdateGenerator {
     }
 
     public Stream<CertificateUpdate> generateQuotes() {
-        ThreadLocalRandom random = ThreadLocalRandom.current();
-        // TODO: Implement me.
-        List<CertificateUpdate> updateList = new ArrayList<CertificateUpdate>();
+        List<CertificateUpdate> tasks = new ArrayList<>();
         for (int i = 0; i < threads * quotes; i++) {
-            updateList.add(new CertificateUpdate());
+            tasks.add(new CertificateUpdate());
         }
-        return Stream.generate(CertificateUpdate::new).parallel().limit(quotes);
+
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            List<Future<String>> futures = executor.invokeAll(tasks);
+            for (Future<String> future : futures) {
+                System.out.println(future.get());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            executor.shutdown();
+        }
+
+        return tasks.stream();
     }
 }
+
